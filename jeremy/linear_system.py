@@ -195,6 +195,21 @@ class Inverse(Scene):
         # self.add(index_labels(self.aug_ai[0]))
         # self.add(index_labels(self.aug_ia_inv[0]))
 
+class DirectMethod(Scene):
+    def __init__(self):
+        super().__init__()
+
+    def construct(self):
+        direct = VGroup(
+            Tex("直接法", font_size=150, stroke_width=4),
+            Tex("Direct Methods", font_size=60, stroke_width=4),
+        ).arrange(DOWN).set_color(YELLOW)
+        comment = Tex(r"（只涉及基础的线性代数，请放心食用\textasciitilde）", font_size=40)
+        VGroup(direct, comment).arrange(DOWN, buff=1)
+
+        self.add(comment)
+        self.play(Write(direct))
+        self.wait()
 
 class GaussianElimination(Scene):
     def __init__(self):
@@ -1357,6 +1372,307 @@ class SpecialLUDecompositions(Scene):
         self.play(FadeIn(block_group, shift=LEFT))
         self.wait(1)
 
+class IterativeMethod(Scene):
+    def __init__(self):
+        super().__init__()
+
+    def construct(self):
+        direct = VGroup(
+            Tex("迭代法", font_size=150, stroke_width=4),
+            Tex("Iterative Methods", font_size=60, stroke_width=4),
+        ).arrange(DOWN).set_color(YELLOW)
+        comment = Tex(r"（涉及较深的理论，只做简单介绍，请按需取用\textasciitilde）", font_size=40)
+        VGroup(direct, comment).arrange(DOWN, buff=1)
+
+        self.add(comment)
+        self.play(Write(direct))
+        self.wait()
+
+
+class IterativeComputationCost(Scene):
+    def construct(self):
+        # 创建坐标系（不使用对数刻度，手动标注）
+        axes = Axes(
+            x_range=[0, 100, 20],
+            y_range=[-1, 20, 4],
+            x_length=8,
+            y_length=6,
+            axis_config={"include_tip": True},
+            x_axis_config={
+                "numbers_to_include": [],  # 不显示数字
+                "include_ticks": False,  # 不显示刻度
+            },
+            y_axis_config={
+                "numbers_to_include": [],  # 手动添加标签
+            },
+        ).shift(RIGHT)
+        
+        # 手动添加 y 轴标签（对数刻度，从上到下）
+        y_labels = VGroup()
+        y_positions = [0, 4, 8, 12, 16]  # 对应 10^0, 10^-4, 10^-8, 10^-12, 10^-16
+        y_exponents = [0, -4, -8, -12, -16]
+        for pos, exp in zip(y_positions, y_exponents):
+            label = MathTex(f"10^{{{exp}}}", font_size=24)
+            label.next_to(axes.c2p(0, 16 - pos), LEFT, buff=0.2)  # 反转：16-pos 使得大数在上
+            y_labels.add(label)
+        
+        # 坐标轴标签 - x轴标签放在底部
+        x_label = Tex("计算量", font_size=36).next_to(axes.x_axis, RIGHT, buff=0.25)
+        y_label = axes.get_y_axis_label(
+            Tex(r"$\Vert b-Ax\Vert$", font_size=36),
+            edge=LEFT,
+            direction=LEFT,
+            buff=1
+        )
+        
+        # 直接法的曲线：先水平（O(1)），然后突然下降到O(eps)
+        direct_x1 = 70  # 直接法开始计算的位置
+        direct_points = [
+            axes.c2p(0, 16),      # 从 10^0 = 1 开始（y=16 对应顶部）
+            axes.c2p(direct_x1, 16),  # 保持水平
+            axes.c2p(direct_x1, 0),  # 突然下降到 10^-16（机器精度，y=0 对应底部）
+            axes.c2p(90, 0),  # 保持在机器精度
+        ]
+        
+        direct_line = VMobject(color=BLUE, stroke_width=4)
+        direct_line.set_points_as_corners(direct_points)
+        
+        # 迭代法的曲线：线性下降，然后保持水平（在直接法的1/3处收敛）
+        iter_x1 = direct_x1 / 3  # 迭代法达到收敛的位置（约23）
+        iter_points = [
+            axes.c2p(0, 16),      # 从 10^0 = 1 开始（y=16 对应顶部）
+            axes.c2p(iter_x1, 0),  # 线性下降到 10^-16（机器精度，y=0 对应底部）
+            axes.c2p(40, 0),  # 保持在收敛精度
+        ]
+        
+        iter_line = VMobject(color=YELLOW, stroke_width=4)
+        iter_line.set_points_as_corners(iter_points)
+        
+        # 图例
+        direct_legend = Tex("direct", font_size=32, color=BLUE).next_to(axes.c2p(direct_x1 / 2, 16), UP)
+        
+        iter_legend = Tex("iterative", font_size=32, color=YELLOW).next_to(axes.c2p(direct_x1 / 6, 8), RIGHT)
+        
+        # 标注关键点
+        iter_converge = Dot(axes.c2p(iter_x1, 0), color=YELLOW, radius=0.08)
+        
+        direct_annotation = MathTex(r"O(n^3)", font_size=28, color=BLUE).next_to(
+            axes.c2p(direct_x1, 0), DOWN, buff=0.2
+        )
+        iter_annotation = Tex(r"收敛", font_size=28, color=YELLOW).next_to(
+            iter_converge, DOWN, buff=0.2
+        )
+        
+        # 动画序列
+        self.add(axes)
+        self.play(Write(x_label), Write(y_label), Write(y_labels))
+        self.wait()
+        
+        self.play(Create(direct_line), run_time=2)
+        self.play(Write(direct_legend), Write(direct_annotation))
+        self.wait()
+
+        self.wait()
+        self.play(Create(iter_line), run_time=2)
+        self.play(Write(iter_legend))
+        self.wait()
+        self.play(FadeIn(iter_converge), Write(iter_annotation))
+        self.wait()
+
+
+class BigDefinition(Scene):
+    """展示不同年代"大矩阵"的定义演变"""
+    
+    def construct(self):
+        # 标题
+        self.title = Title("什么算``大''矩阵？", font_size=48,)
+        self.add(self.title)
+        self.wait()
+        
+        # 历史数据
+        timeline_data = [
+            (1950, 20, "真空管计算机时代"),
+            (1965, 200, "晶体管计算机"),
+            (1980, 2000, "集成电路时代"),
+            (1995, 20000, "个人计算机普及"),
+            (2010, 100000, "多核处理器"),
+            (2020, 500000, "GPU加速计算"),
+            (2026, 2000000, "AI芯片 + 分布式")
+        ]
+        
+        # 创建时间轴
+        self.show_timeline(timeline_data)
+
+    def show_timeline(self, data):
+        """显示时间轴动画"""
+        timeline_group = VGroup()
+        
+        # 计算布局
+        start_y = 2.5
+        spacing = 0.85
+        
+        for i, (year, size, desc) in enumerate(data):
+            y_pos = start_y - i * spacing
+            
+            # 年份
+            year_text = Text(f"{year}:", font_size=32, color=BLUE)
+            year_text.move_to(LEFT * 5 + UP * y_pos)
+            
+            # 矩阵规模 (使用 n >= 格式)
+            size_formula = MathTex(f"n \\geq {size:,}", font_size=40, color=YELLOW)
+            size_formula.next_to(year_text, RIGHT, buff=0.5)
+            
+            # 描述
+            desc_text = Text(f"({desc})", font_size=22, color=GRAY)
+            desc_text.next_to(size_formula, RIGHT, buff=0.4)
+            
+            row_group = VGroup(year_text, size_formula, desc_text)
+            timeline_group.add(row_group)
+
+        self.timeline_group = timeline_group.next_to(self.title, DOWN, buff=.5)
+        self.play(FadeIn(self.timeline_group))
+        self.wait()
+    
+class KrylovSubspace(Scene):
+    def construct(self):
+        # 标题
+        title = Title("Krylov Subspace")
+        self.add(title)
+        self.wait()
+        
+        # 具体例子：2x2矩阵
+        example_matrix = MathTex(
+            r"A = \begin{bmatrix} 3 & 1 \\ 1 & 3 \end{bmatrix}", r",~ p(\lambda) = \det(\lambda I - A) = {{\lambda}}^2 - 6{{\lambda}} + 8 = 0",
+            font_size=44
+        ).set_color_by_tex_to_color_map({'A': RED, 'lambda': BLUE})
+        example_matrix[1].set_color(WHITE)
+        for i in (3, 10):
+            example_matrix[1][i].set_color(BLUE)
+        example_matrix[1][13].set_color(RED)
+        # Cayley-Hamilton定理
+        cayley_hamilton = MathTex(
+            r"\Longrightarrow p({{A}}) = {{A}}^2 - 6{{A}} + 8I = O",
+            font_size=44,
+        ).set_color_by_tex_to_color_map({'A': RED})
+        
+        inverse_result = MathTex(
+            r"\Longrightarrow {{A}}^{-1} = -\frac{1}{8}{{A}} + \frac{3}{4}I",
+            font_size=44,
+        )
+
+        VGroup(
+            example_matrix,
+            cayley_hamilton,
+            inverse_result
+        ).arrange(DOWN).next_to(title, DOWN)
+        # 逆矩阵的多项式表示
+        inverse_poly = MathTex(
+            r"{{x=A^{-1}b = p_{n-1}(A)b}} \qquad p_{n-1} \in \mathcal{P}_{n-1}",
+            font_size=44,
+        ).set_color_by_tex('A', YELLOW).next_to(inverse_result, DOWN, buff=0.5)
+        box = SurroundingRectangle(inverse_poly[0], color=YELLOW, buff=0.2)
+        
+        
+        self.play(Write(example_matrix))
+        self.wait()
+        self.play(Write(cayley_hamilton))
+        self.wait()
+        self.play(Write(inverse_result))
+        self.wait()
+        self.play(Create(box), Write(inverse_poly))
+        self.wait()
+        self.play(
+            FadeOut(VGroup(example_matrix, cayley_hamilton, inverse_result)),
+            VGroup(box, inverse_poly).animate.next_to(title, DOWN, buff=.5)
+        )
+        self.wait()
+        chain = MathTex(
+            r"p_0(A)b~\subseteq~ p_1(A)b~\subseteq~ p_2(A)b~\subseteq~\cdots,\quad p_k\in \mathcal{P}_k",
+            color=BLUE,
+            font_size=35
+        ).next_to(inverse_poly, DOWN, buff=1)
+        self.play(Write(chain))
+        self.wait()
+        # Krylov子空间定义
+        krylov_def = MathTex(
+            r"\mathcal{K}_k", r"= \{", "p_{k-1}(A)b", r"\}", r"=", r"\mathrm{span}\{b, Ab, A^2b, \ldots, A^{k-1}b\}",
+            font_size=44,
+        ).set_color_by_tex_to_color_map(
+            {'(A)b': BLUE, 'span': YELLOW}
+        ).next_to(chain, DOWN, buff=0.8)
+        
+        self.play(Write(krylov_def[:4]))
+        self.wait()
+        self.play(Write(krylov_def[4:]))
+        self.wait()
+
+        basis = Tex(r"一组（很差的）基：", "$b, ~Ab, ~A^2b, ~\ldots, ~A^{k-1}b$").next_to(krylov_def, DOWN, buff=1)
+        basis[1].set_color(YELLOW)
+        self.play(Write(basis))
+        self.wait()
+        # self.add(index_labels(krylov_def))
+
+class PowerMethod(LinearTransformationScene):
+    def __init__(self):
+        LinearTransformationScene.__init__(
+            self,
+            show_basis_vectors=False,
+            show_coordinates=False,
+            leave_ghost_vectors=False,
+            include_foreground_plane=True,
+        )
+    
+    def construct(self):
+        # 定义矩阵 A
+        matrix = [[1.5, 0.5], [0.5, 1.5]]
+        
+        # 初始向量 b
+        initial_vector = np.array([0, 1])
+        initial_vector = initial_vector# / np.linalg.norm(initial_vector)
+        
+        # 创建初始向量 b
+        vector_b = Vector(initial_vector, color=YELLOW)
+        label_b = MathTex("b", color=YELLOW).move_to(
+            np.array([*initial_vector, 0]) + np.array([-0.3, 0.2, 0])
+        )
+        self.add_foreground_mobject(label_b)
+        self.add(vector_b, label_b)
+        self.wait()
+        
+        # 迭代生成 Ab, A^2b, A^3b, ...
+        current_vector = initial_vector.copy()
+        vectors = [vector_b]
+        labels = [label_b]
+        
+        iterations = 8
+        # 生成从黄色到绿色的渐变，包括 b 在内共 7 个向量
+        colors = [interpolate_color(YELLOW, GREEN, alpha) for alpha in np.linspace(0, 1, iterations + 1)]
+        # 第一个颜色已经用于 b，所以从第二个开始
+        colors = colors[1:]
+        
+        for i in range(iterations):
+            # 应用矩阵变换
+            next_vector = np.dot(matrix, current_vector)
+            next_vector = next_vector / 1.5
+            
+            # 创建新向量
+            new_vector = Vector(next_vector, color=colors[i])
+            vector_end = np.array([*next_vector, 0])# * 1.3
+            new_label = MathTex(f"A^{{{i+1}}}b", color=colors[i]).move_to(
+                vector_end + np.array([0.3, 0.2, 0])
+            )
+            
+            vectors.append(new_vector)
+            labels.append(new_label)
+            
+            # self.add_foreground_mobject(new_label)
+            self.add(new_vector)
+            self.wait(.2)
+            
+            current_vector = next_vector
+        
+        self.wait()
+
 
 class CG1(ThreeDScene):
     def __init__(self):
@@ -1743,6 +2059,9 @@ class CG2(MovingCameraScene):
                 break
         
         self.wait()
+        p0 = MathTex("p_0", color=YELLOW).move_to(cg_trajectory[0]).shift(UL * .2)
+        p1 = MathTex("p_1", color=YELLOW).move_to(cg_trajectory[1]).shift(UR * .2)
+        grad = MathTex(r"-\nabla f(x_0)", font_size=30).add_background_rectangle().move_to(cg_trajectory[0]).shift(DR * .4)
         
         # 完全淡出蓝色的最速下降轨迹
         self.play(
@@ -1804,4 +2123,106 @@ class CG2(MovingCameraScene):
             # 显示直角符号
             self.play(Create(right_angle))
         
+        self.wait()
+        # 计算逆矩阵
+        inverse_matrix = np.linalg.inv(transform_matrix)
+        all_objects.add(right_angle)
+        self.play(
+            # FadeOut(right_angle),
+            all_objects.animate.apply_matrix(inverse_matrix),
+            self.camera.frame.animate.scale(1/1.5),
+        )
+        self.play(
+            FadeIn(p0),
+            FadeIn(p1)
+        )
+        self.play(Write(grad))
+        self.wait()
+
+
+class CG3(Scene):
+    def __init__(self):
+        super().__init__()
+        font_size = 40
+        self.i_conj = Tex(r"关于$I$正交： $\langle x,y\rangle=x^Ty=0$", font_size=font_size)
+        self.a_conj = Tex(r"关于$A$正交：$\langle x,y\rangle_A=x^TAy=0$ ", font_size=font_size)
+        self.aside = Tex("($A$-conjugate)", font_size=30)
+        self.aside2 = Tex("(需要$A$正定)", font_size=30)
+        self.a_norm = MathTex(r"A\text{-norm: } \lVert x\rVert_A=\sqrt{\langle x,x\rangle_A}=\sqrt{x^T A x}", font_size=font_size)
+
+        for i in (7, 12):
+            self.i_conj[0][i].set_color(RED)
+        for i in (9, 14):
+            self.i_conj[0][i].set_color(GREEN)
+        for i in (11, 15):
+            self.a_conj[0][i].set_color(YELLOW)
+        for i in (7, 13):
+            self.a_conj[0][i].set_color(RED)
+        for i in (9, 16):
+            self.a_conj[0][i].set_color(GREEN)
+        
+        for i in (8, 15, 17, 23, 26):
+            self.a_norm[0][i].set_color(RED)
+        for i in (10, 19, 25):
+            self.a_norm[0][i].set_color(YELLOW)
+
+        VGroup(self.i_conj, self.a_conj, self.a_norm).arrange(DOWN).to_edge(UP)
+        self.aside.next_to(self.a_conj, buff=.5)
+        self.aside2.next_to(self.a_norm, buff=.5)
+
+        self.algo = VGroup(
+            MathTex("x_0=0,~r_0=b,~p_0=r_0"),
+            Tex(r"\textbf{for} $k=1,2,3,\ldots$"),
+            MathTex(r"\alpha_k = (r_{k-1}^T r_{k-1}) / (p_{k-1}^T A p_{k-1})"),
+            MathTex(r"x_k = x_{k-1} + \alpha_k p_{k-1}"),
+            MathTex(r"r_k = r_{k-1} - \alpha_k A p_{k-1}"),
+            MathTex(r"\beta_k = (r_k^T r_k) / (r_{k-1}^T r_{k-1})"),
+            MathTex(r"p_k = r_k + \beta_k p_{k-1}"),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3).scale(.6).to_corner(DL, buff=1).shift(DOWN * .2)
+        self.algo[2:].shift(RIGHT * .6)
+        self.rect = SurroundingRectangle(self.algo)
+        self.desc = Tex(r"{\kaishu 在互相$A$-conjugate的方向中，\\每步干掉$e_k=x^*-x_k$的一个分量.}", color=YELLOW, font_size=30).next_to(self.rect, UP)
+        
+        # 右下角的评论
+        comment_font_size = 35
+        self.comments = VGroup(
+            Tex(r"1. $p_0=b-Ax_0=-\nabla f(x_0)$: ``共轭梯度''", font_size=comment_font_size),
+            Tex(r"2. 第$k$步在$\mathcal{K}_k$中{{minimize $\lVert e^k \rVert_A$}}", font_size=comment_font_size).set_color_by_tex("min", YELLOW),
+            Tex(r"3. 每步一次$Ap_{k-1}$: 稠密$2n^2$，稀疏$O(n)$", font_size=comment_font_size),
+            Tex(r"4. 只需上一步信息，空间占用小", font_size=comment_font_size),
+            Tex(r"5. 收敛速度与特征值分布有关:", font_size=comment_font_size),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.2).to_corner(DR, buff=1).shift(UP)
+
+        self.rel_err = MathTex(r"{\lVert e_k \rVert_A\over\lVert e_0\rVert_A}\leq 2\left(\frac{\sqrt{\kappa}-1}{\sqrt{\kappa}+1}\right)^k,~\kappa=\frac{\lambda_{\max}}{\lambda_{\min}}", color=BLUE, font_size=30).next_to(self.comments, DOWN)
+
+        self.bg = RoundedRectangle(
+            corner_radius=0.2,
+            fill_color=GOLD,
+            fill_opacity=0.2,
+            stroke_width=0
+        ).surround(VGroup(self.comments, self.rel_err), buff=.5).stretch(1.2, dim=1)
+
+    def construct(self):
+        self.play(Write(self.i_conj))
+        self.wait()
+        self.play(Write(self.a_conj))
+        self.play(Write(self.aside))
+        self.wait()
+        self.play(Write(self.a_norm))
+        self.play(Write(self.aside2))
+        self.wait()
+        self.play(Write(self.desc))
+        self.wait()
+        
+        # 显示算法伪代码
+        self.play(FadeIn(self.algo), Create(self.rect))
+        self.wait()
+        
+        # 显示右下角的评论
+        self.play(FadeIn(self.bg))
+        self.bring_to_back(self.bg)
+        for comment in self.comments:
+            self.play(Write(comment))
+            self.wait()
+        self.play(Write(self.rel_err))
         self.wait()
