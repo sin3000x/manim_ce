@@ -1674,6 +1674,105 @@ class PowerMethod(LinearTransformationScene):
         self.wait()
 
 
+class Arnoldi(Scene):
+    def construct(self):
+        title = Title("Krylov子空间的一组正交基")
+        self.add(title)
+        self.wait()
+        cm = {'h': BLUE, 'q': RED}
+        algo = VGroup(
+            MathTex(r"{{q_1}} = b/\lVert b\rVert").set_color_by_tex_to_color_map(cm),
+            Tex(r"\textbf{for} $k=1,2,3,\ldots$"),
+            MathTex(r"v = A{{q_k}}").set_color_by_tex_to_color_map(cm),
+            Tex(r"\textbf{for} $j=1$ \textbf{to} $k$"),
+            MathTex(r"{{h_{jk}}}=", "q_j^T", "v").set_color_by_tex_to_color_map(cm),
+            MathTex(r"v=v-{{h_{j k}}}{{q_j}}").set_color_by_tex_to_color_map(cm),
+            MathTex(r"{{h_{k+1,k}}}=\lVert v\rVert").set_color_by_tex_to_color_map(cm),
+            MathTex(r"{{q_{k+1}}} = v / {{h_{k+1,k}}}").set_color_by_tex_to_color_map(cm)
+        ).arrange(DOWN, aligned_edge=LEFT)
+        algo[2:].shift(RIGHT)
+        algo[4:6].shift(RIGHT)
+        algo.scale(.8).next_to(title, DOWN, buff=1).to_edge(LEFT, buff=1)
+        box = SurroundingRectangle(algo).stretch(.7, dim=0)
+        name = Tex("Arnoldi Iteration", color=box.get_color(), font_size=35).next_to(box, UP)
+        self.play(Write(algo))
+        self.play(Create(box), Write(name))
+        # self.add(index_labels(algo[4]))
+
+        # Arnoldi迭代结果展示：AQ_k = Q_{k+1}H_k
+        k = 4  # k=4
+        n = 8  # 矩阵维度
+        opacity = 1  # 填充颜色的不透明度
+        
+        # 创建矩阵A的grid (n x n)
+        a_grid = VGroup(
+            *[
+                VGroup(*[Square(0.3, stroke_width=0).set_fill(WHITE, opacity=opacity) for _ in range(n)]).arrange(RIGHT, buff=.05)
+                for _ in range(n)
+            ]
+        ).arrange(DOWN, buff=.05)
+        
+        # 创建矩阵Q_k的grid (n x k)，每列用不同深浅的红色
+        red_colors = [RED_E, RED_D, RED_C, RED_B]  # 四种深浅的红色
+        q_grid = VGroup(
+            *[
+                VGroup(*[Square(0.3, stroke_width=0).set_fill(red_colors[j], opacity=opacity) 
+                        for j in range(k)]).arrange(RIGHT, buff=.05)
+                for _ in range(n)
+            ]
+        ).arrange(DOWN, buff=.05)
+        
+        # 等号
+        equals1 = MathTex("=", font_size=50)
+        
+        # 创建矩阵Q_{k+1}的grid (n x (k+1))
+        red_colors_extended = [RED_E, RED_D, RED_C, RED_B, RED_A]  # 五种深浅的红色
+        q_plus_grid = VGroup(
+            *[
+                VGroup(*[Square(0.3, stroke_width=0).set_fill(red_colors_extended[j], opacity=opacity) 
+                        for j in range(k+1)]).arrange(RIGHT, buff=.05)
+                for _ in range(n)
+            ]
+        ).arrange(DOWN, buff=.05)
+        
+        # 创建上Hessenberg矩阵H_k的grid ((k+1) x k)
+        # 只在上Hessenberg部分（主对角线+上三角+第一条次对角线）显示方块
+        h_grid = VGroup()
+        for i in range(k+1):
+            row = VGroup()
+            for j in range(k):
+                if j >= i - 1:  # 上Hessenberg条件：j >= i-1
+                    square = Square(0.3, stroke_width=0).set_fill(BLUE, opacity=opacity)
+                else:
+                    square = Square(0.3, fill_opacity=0, stroke_opacity=0)  # 不显示
+                row.add(square)
+            row.arrange(RIGHT, buff=.05)
+            h_grid.add(row)
+        h_grid.arrange(DOWN, buff=.05)
+        
+        # 排列所有元素：A Q_k = Q_{k+1} H_k
+        equation = VGroup(
+            a_grid,
+            q_grid,
+            equals1,
+            q_plus_grid,
+            h_grid
+        ).arrange(RIGHT, buff=0.4).scale(0.8).to_edge(RIGHT, buff=1).shift(UP * .2)
+        a_label = MathTex("A", font_size=40).next_to(a_grid, DOWN)
+        q_label = MathTex("Q_k", font_size=40, color=RED).next_to(q_grid, DOWN)
+        q_plus_label = MathTex("Q_{k+1}", font_size=40, color=RED).next_to(q_plus_grid, DOWN)
+        h_label = MathTex("\\tilde H_k", font_size=40, color=BLUE).next_to(h_grid, DOWN).align_to(q_plus_label, DOWN)
+        
+        hessenberg = Tex("$\\tilde H_k$: upper Hessenberg", color=BLUE).next_to(equation, DOWN, buff=1.2)
+
+        # 动画展示
+        self.play(FadeIn(equation), FadeIn(a_label), FadeIn(q_label), FadeIn(q_plus_label), FadeIn(h_label))
+        self.wait()
+
+        self.play(Write(hessenberg))
+        self.wait()
+
+
 class CG1(ThreeDScene):
     def __init__(self):
         super().__init__()
