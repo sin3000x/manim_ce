@@ -30,7 +30,7 @@ class LTDemo(LinearTransformationScene):
         )
 
     def construct(self):
-        self.apply_matrix(self.A)
+        self.apply_matrix(self.A, run_time=2)
         self.play(Write(self.title))
         self.wait()
 
@@ -38,41 +38,51 @@ class ChangeBasis(LinearTransformationScene):
     def __init__(self, **kwargs):
         super().__init__(
             leave_ghost_vectors=False,
+            show_basis_vectors=False,
             **kwargs
         )
         self.A = [[2, 2], [1, 3]]
         self.b = (-4, -1)
         self.x = np.linalg.solve(self.A, self.b)
         self.title = MathTex(
-            r"A {{\vec{x}}} = {{\vec{b}}}",
-            tex_to_color_map={'x': PINK, 'b': YELLOW}
-        ).add_background_rectangle().to_edge(UP, buff=1)
-
-        self.b_vec = Vector(self.b, color=YELLOW)
-        self.b_vec.label = (
-            MathTex(r"\vec{b}", color=YELLOW)
-            .add_background_rectangle()
-            .next_to(self.b_vec.get_end(), DL)
-        )
-
-        self.x_vec = Vector(self.x, color=PINK)
-        self.x_vec.label = (
-            MathTex(r"\vec{x}", color=PINK)
-            .add_background_rectangle()
-            .next_to(self.x_vec.get_end(), LEFT)
-        )
-        self.add_moving_mobject(self.x_vec)
+            r"A {{x}} = {{b}}",
+            tex_to_color_map={'x': PINK, 'b': YELLOW},
+            font_size=80
+        ).to_edge(UP, buff=1).add_background_rectangle()
+        self.title2 = MathTex(
+            r"{{x}} = A^{-1}{{b}}",
+            tex_to_color_map={'x': PINK, 'b': YELLOW},
+            font_size=80
+        ).to_edge(UP, buff=1).add_background_rectangle()
 
     def construct(self):
-        self.play(Write(self.title))
-        self.play(GrowArrow(self.b_vec))
-        self.play(Write(self.b_vec.label))
+        self.add(self.title)
+        
+        # 创建 b_vec，但不使用 add_vector，这样它不会被变换
+        b_vec = Vector(self.b, color=YELLOW)
+        b_vec_label = (
+            MathTex(r"b", color=YELLOW)
+            .add_background_rectangle()
+            .next_to(b_vec.get_end(), DL)
+        )
+        
+        # 使用 add_vector 添加 x_vec，这样它会被变换
+        x_vec_ghost = Vector(self.x, color=PINK).set_opacity(.3)
+        self.add(x_vec_ghost)
+        x_vec = self.add_vector(self.x, color=PINK)
+        x_vec_label = (
+            MathTex(r"x", color=PINK)
+            .add_background_rectangle()
+            .next_to(x_vec.get_end(), LEFT)
+        )
+        self.add(b_vec, b_vec_label, x_vec_label)
 
-        self.play(GrowArrow(self.x_vec))
-        self.play(Write(self.x_vec.label))
-        self.apply_matrix(self.A)
+        self.apply_matrix(self.A, run_time=2)
+        
         self.wait()
-
+        self.apply_inverse(self.A, run_time=2)
+        self.play(FadeTransform(self.title, self.title2))
+        self.wait()
 
 class ManualExample(Scene):
     def __init__(self):
@@ -1772,6 +1782,11 @@ class Arnoldi(Scene):
         self.play(Write(hessenberg))
         self.wait()
 
+class GMRES(Scene):
+    def construct(self):
+        title = Title("GMRES (Generalized Minimal Residual Method)")
+        self.add(title)
+        self.wait()
 
 class CG1(ThreeDScene):
     def __init__(self):
