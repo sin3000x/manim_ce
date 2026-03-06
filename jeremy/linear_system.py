@@ -1788,6 +1788,95 @@ class GMRES(Scene):
         self.add(title)
         self.wait()
 
+class Residual(LinearTransformationScene):
+    def __init__(self, **kwargs):
+        super().__init__(
+            leave_ghost_vectors=True,
+            show_basis_vectors=False,
+            **kwargs
+        )
+        self.A = [[2, 2], [1, 3]]
+        self.b = (-4, -1)
+        self.x_star = np.linalg.solve(self.A, self.b)  # 真实解
+        self.x_k = np.array([-1, 1])  # 当前迭代解
+        
+    def construct(self):
+        
+        # 先画出 x^* 和 x_k
+        x_star_vec = self.add_vector(self.x_star, color=YELLOW)
+        x_star_label = (
+            MathTex(r"x^*", color=x_star_vec.get_color())
+            # .add_background_rectangle()
+            .next_to(x_star_vec.get_end(), LEFT)
+        )
+        
+        x_k_vec = self.add_vector(self.x_k, color=GOLD)
+        x_k_label = (
+            MathTex(r"x_k", color=x_k_vec.get_color())
+            # .add_background_rectangle()
+            .next_to(x_k_vec.get_end(), UP)
+        )
+        
+        self.play(Write(x_star_label), Write(x_k_label))
+        self.wait()
+        
+        # 画出 e_k = x^* - x_k（作为箭头，从 x_k 指向 x_star）
+        e_k_arrow = Arrow(
+            start=x_k_vec.get_end(),
+            end=x_star_vec.get_end(),
+            color=RED,
+            buff=0
+        )
+        
+        e_k_label = (
+            MathTex(r"e_k = x^* - x_k", color=e_k_arrow.get_color())
+            .next_to(e_k_arrow.get_center(), UL)
+        )
+        
+        self.play(GrowArrow(e_k_arrow), FadeIn(e_k_label))
+        self.wait()
+        
+        # 应用 A: x^* -> b, x_k -> Ax_k, e_k -> r_k
+        # 创建新标签（变换后的）
+        b_label = MathTex(r"b", color=YELLOW)
+        ax_k_label = MathTex(r"Ax_k", color=GOLD)
+        r_k_label = MathTex(r"r_k = b - Ax_k", color=RED)
+        
+        # 手动对每个向量应用矩阵变换
+        # 计算变换后的位置
+        A_np = np.array(self.A)
+        b = A_np @ self.x_star
+        Ax_k = A_np @ self.x_k
+        
+        # 先将新标签移到目标位置（用于计算位置）
+        b_label.next_to(self.plane.c2p(*b), DOWN)
+        ax_k_label.next_to(self.plane.c2p(*Ax_k), UP)
+        r_k_label.next_to(
+            (self.plane.c2p(*Ax_k) + self.plane.c2p(*b)) / 2,
+            UL
+        )
+        
+        # 创建变换动画
+        self.play(
+            # 变换网格
+            self.background_plane.animate.apply_matrix(A_np),
+            self.plane.animate.apply_matrix(A_np),
+            # 变换向量
+            x_star_vec.animate.put_start_and_end_on(ORIGIN, self.plane.c2p(*b)),
+            x_k_vec.animate.put_start_and_end_on(ORIGIN, self.plane.c2p(*Ax_k)),
+            # 变换箭头
+            e_k_arrow.animate.put_start_and_end_on(
+                self.plane.c2p(*Ax_k),
+                self.plane.c2p(*b)
+            ),
+            # 变换标签
+            ReplacementTransform(x_star_label, b_label),
+            ReplacementTransform(x_k_label, ax_k_label),
+            ReplacementTransform(e_k_label, r_k_label),
+            run_time=2
+        )
+        
+        self.wait()
 class CG1(ThreeDScene):
     def __init__(self):
         super().__init__()
