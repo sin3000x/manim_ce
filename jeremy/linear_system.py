@@ -2862,3 +2862,23 @@ class DontInvert(Scene):
             )
         self.wait()
 
+
+class Generalization(Scene):
+    def construct(self):
+        font_size = 80
+        v = VGroup(
+            MathTex(r"A^{-1}", 'b', font_size=font_size),
+            MathTex(r"A_1A_2A_3", 'b', font_size=font_size),
+            MathTex(r"(A^3+3A^2+A)", 'b', font_size=font_size),
+            MathTex(r"\mathrm{e}^A", 'b', font_size=font_size),
+        ).arrange(DOWN, buff=.75)
+        for t in v:
+            t.set_color_by_tex_to_color_map({'A': RED, 'b': YELLOW})
+        self.add(*[t[0] for t in v])
+        self.wait()
+        self.play(
+            AnimationGroup(
+                Write(t[1]) for t in v
+            )
+        )
+        self.wait()
