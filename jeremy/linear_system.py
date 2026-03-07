@@ -1,4 +1,5 @@
 from manim import *
+from pathlib import Path
 from manim.scene.vector_space_scene import X_COLOR, Y_COLOR
 
 # 让本文件内所有 Tex/MathTex 默认使用 ctex，无需逐个传 tex_template
@@ -126,6 +127,33 @@ class Opening(Scene):
         )
         
         self.wait(5)
+
+ASSET_PATH = Path(__file__).parent / 'assets' / 'linear_system'
+class Textbook(Scene):
+    def construct(self):
+        eola1 = ImageMobject(ASSET_PATH / '3b1b1.png').scale(.5)
+        eola2 = ImageMobject(ASSET_PATH / '3b1b2.png').scale(.5)
+        eola2.shift(DOWN * 1.5)
+        eola = Group(eola2, eola1).to_edge(LEFT).to_edge(UP, buff=1)
+        eola_label = Tex(r"《线性代数的本质 - 06》", color=YELLOW, font_size=40).next_to(eola, DOWN)
+
+        ml = ImageMobject(ASSET_PATH / 'ml').scale(.6).to_edge(RIGHT, buff=1).to_edge(UP)
+        ml_label = Tex(r"《机器学习》", color=YELLOW, font_size=40).next_to(ml, DOWN)
+
+        rl = ImageMobject(ASSET_PATH / 'rl').scale(.6).next_to(ml_label, DOWN, buff=.5)
+        rl_label = Tex("《动手学强化学习》", color=YELLOW, font_size=40).next_to(rl, DOWN)
+
+        self.wait()
+
+        self.add(eola, eola_label)
+        self.wait(.5)
+
+        self.add(ml, ml_label)
+        self.wait(.5)
+
+        self.add(rl, rl_label)
+        self.wait()
+
 
 class LTDemo(LinearTransformationScene):
     def __init__(self, **kwargs):
