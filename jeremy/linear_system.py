@@ -1823,7 +1823,7 @@ class GMRES(Scene):
 
         self.play(Write(inter))
         self.wait()
-        
+
         self.play(Write(ls))
         self.wait()
 
@@ -2481,4 +2481,265 @@ class CG3(Scene):
             self.play(Write(comment))
             self.wait()
         self.play(Write(self.rel_err))
+        self.wait()
+
+
+class Preconditioning(ThreeDScene):
+    def __init__(self):
+        # 标题
+        self.title = Title("Preconditioning")
+        
+        # 问题描述
+        self.problem = MathTex(r"Ax = b", r"~\Longrightarrow~ ", r"M^{-1}", r"Ax=", r"M^{-1}", "b").next_to(self.title, DOWN, buff=0.5)
+        
+        
+    def construct(self):
+        self.add_fixed_in_frame_mobjects(self.title)
+        # self.add(self.title)
+        self.wait()
+        self.play(Write(self.problem))
+        self.wait()
+        self.camera.add_fixed_in_frame_mobjects(self.problem)
+        
+        # 2. 可视化地形对比
+        self.visualize_terrain()
+        
+        # 3. 迭代速度对比
+        # self.compare_convergence()
+        
+        # 4. 常见预条件器
+        # self.show_preconditioners()
+        
+        # 5. Machine Learning结尾
+        # self.ml_ending()
+        
+    def visualize_terrain(self):
+        """可视化原始A和预条件后的地形"""
+        # self.play(self.title.animate.scale(0.7).to_corner(UL))
+        
+        # 创建两个3D坐标系
+        axes = ThreeDAxes(
+            x_range=[-2, 2, 1],
+            y_range=[-2, 2, 1],
+            z_range=[0, 10, 2],
+            x_length=4,
+            y_length=4,
+            z_length=3,
+        ).shift(LEFT * 3.5 + DOWN * 0.5)
+        
+        # 创建地形曲面 - 病态矩阵 (高条件数)
+        def bad_surface(u, v):
+            return axes.c2p(u, v, 5 * u**2 + 0.1 * v**2)
+        
+        surface_bad = Surface(
+            bad_surface,
+            u_range=[-1.5, 1.5],
+            v_range=[-1.5, 1.5],
+            fill_opacity=0.7,
+            checkerboard_colors=[RED_D, RED_E]
+        )
+        
+        # 创建地形曲面 - 良态矩阵 (低条件数)
+        def good_surface(u, v):
+            return axes.c2p(u, v, u**2 + v**2)
+        
+        surface_good = Surface(
+            good_surface,
+            u_range=[-1.5, 1.5],
+            v_range=[-1.5, 1.5],
+            fill_opacity=0.7,
+            checkerboard_colors=[GREEN_D, GREEN_E]
+        )
+        
+        self.play( Create(axes),)
+        
+        # 设置相机角度
+        self.move_camera(phi=60 * DEGREES, theta=-45 * DEGREES)
+        
+        self.play(Create(surface_bad),)
+        self.play(ReplacementTransform(surface_bad, surface_good))
+        self.wait(2)
+        
+        # 清屏
+        self.play(FadeOut(VGroup(axes, surface_good)))        
+        self.set_camera_orientation(phi=0, theta=0)
+        
+    def compare_convergence(self):
+        """对比迭代速度"""
+        # 创建坐标轴
+        axes = Axes(
+            x_range=[0, 50, 10],
+            y_range=[0, 1, 0.2],
+            x_length=10,
+            y_length=5,
+            axis_config={"include_tip": True},
+            tips=True
+        ).shift(DOWN * 0.5)
+        
+        x_label = axes.get_x_axis_label(Text("迭代次数", font_size=28))
+        y_label = axes.get_y_axis_label(Text("相对误差", font_size=28), edge=LEFT, direction=LEFT)
+        
+        self.play(Create(axes), Write(x_label), Write(y_label))
+        self.wait()
+        
+        # 原始迭代法 - 慢收敛
+        original_points = [
+            axes.c2p(k, 0.95 ** k) for k in range(51)
+        ]
+        original_line = VMobject(color=RED, stroke_width=3)
+        original_line.set_points_as_corners(original_points)
+        original_dots = VGroup(*[Dot(p, color=RED, radius=0.04) for p in original_points[::5]])
+        
+        # 预条件迭代法 - 快收敛
+        precond_points = [
+            axes.c2p(k, 0.7 ** k) for k in range(51)
+        ]
+        precond_line = VMobject(color=GREEN, stroke_width=3)
+        precond_line.set_points_as_corners(precond_points)
+        precond_dots = VGroup(*[Dot(p, color=GREEN, radius=0.04) for p in precond_points[::5]])
+        
+        # 图例
+        legend_original = VGroup(
+            Line(ORIGIN, RIGHT * 0.5, color=RED, stroke_width=3),
+            Text("原始迭代", font_size=24, color=RED)
+        ).arrange(RIGHT, buff=0.2).to_corner(UR, buff=0.5)
+        
+        legend_precond = VGroup(
+            Line(ORIGIN, RIGHT * 0.5, color=GREEN, stroke_width=3),
+            Text("预条件迭代", font_size=24, color=GREEN)
+        ).arrange(RIGHT, buff=0.2).next_to(legend_original, DOWN, aligned_edge=LEFT, buff=0.2)
+        
+        self.play(
+            Create(original_line),
+            Create(original_dots),
+            Write(legend_original),
+            run_time=2
+        )
+        self.wait()
+        
+        self.play(
+            Create(precond_line),
+            Create(precond_dots),
+            Write(legend_precond),
+            run_time=2
+        )
+        self.wait(2)
+        
+        # 清屏
+        self.play(
+            FadeOut(VGroup(axes, x_label, y_label, original_line, original_dots, 
+                          precond_line, precond_dots, legend_original, legend_precond))
+        )
+        
+    def show_preconditioners(self):
+        """展示几种常见的预条件器"""
+        subtitle = Text("常见预条件器", font_size=40, color=YELLOW).next_to(self.title, DOWN, buff=0.5)
+        self.play(Write(subtitle))
+        self.wait()
+        
+        # 预条件器列表
+        preconditioners = VGroup(
+            VGroup(
+                Text("1. 对角预条件 (Diagonal)", font_size=32, color=BLUE),
+                MathTex(r"M = \text{diag}(A)", font_size=28)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.2),
+            
+            VGroup(
+                Text("2. Jacobi预条件", font_size=32, color=BLUE),
+                MathTex(r"M = D, \quad A = D + L + U", font_size=28)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.2),
+            
+            VGroup(
+                Text("3. 不完全LU分解 (ILU)", font_size=32, color=BLUE),
+                MathTex(r"M \approx LU \text{ (稀疏模式)}", font_size=28)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.2),
+            
+            VGroup(
+                Text("4. 不完全Cholesky (ICC)", font_size=32, color=BLUE),
+                MathTex(r"M \approx LL^T \text{ (对称正定)}", font_size=28)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.2),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.5).next_to(subtitle, DOWN, buff=0.8)
+        
+        # 逐个显示
+        for precond in preconditioners:
+            self.play(FadeIn(precond, shift=RIGHT * 0.5))
+            self.wait(0.8)
+        
+        self.wait(2)
+        
+        # 清屏
+        self.play(FadeOut(VGroup(subtitle, preconditioners)))
+        
+    def ml_ending(self):
+        """以Machine Learning结束"""
+        ml_title = Text("现代发展: 机器学习预条件器", font_size=40, color=GOLD).next_to(self.title, DOWN, buff=0.5)
+        
+        ml_content = VGroup(
+            Text("• 使用神经网络学习最优预条件器", font_size=28),
+            Text("• 根据矩阵结构自适应选择M", font_size=28),
+            Text("• 结合物理信息的深度学习方法", font_size=28),
+            Text("• 大规模问题的可扩展性", font_size=28),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.4).next_to(ml_title, DOWN, buff=0.8)
+        
+        # 简单的神经网络图示
+        nn_diagram = VGroup()
+        
+        # 输入层
+        input_layer = VGroup(*[Circle(radius=0.15, color=BLUE, fill_opacity=0.5) for _ in range(3)])
+        input_layer.arrange(DOWN, buff=0.3)
+        
+        # 隐藏层
+        hidden_layer = VGroup(*[Circle(radius=0.15, color=GREEN, fill_opacity=0.5) for _ in range(4)])
+        hidden_layer.arrange(DOWN, buff=0.2).shift(RIGHT * 2)
+        
+        # 输出层
+        output_layer = VGroup(*[Circle(radius=0.15, color=RED, fill_opacity=0.5) for _ in range(3)])
+        output_layer.arrange(DOWN, buff=0.3).shift(RIGHT * 4)
+        
+        # 连接线
+        connections = VGroup()
+        for i_node in input_layer:
+            for h_node in hidden_layer:
+                connections.add(Line(i_node.get_right(), h_node.get_left(), stroke_width=1, color=GRAY))
+        
+        for h_node in hidden_layer:
+            for o_node in output_layer:
+                connections.add(Line(h_node.get_right(), o_node.get_left(), stroke_width=1, color=GRAY))
+        
+        nn_diagram.add(connections, input_layer, hidden_layer, output_layer)
+        nn_diagram.scale(0.8).to_edge(RIGHT, buff=1).shift(DOWN * 0.5)
+        
+        # 标签
+        input_label = Text("矩阵A", font_size=20).next_to(input_layer, LEFT, buff=0.3)
+        output_label = Text("预条件器M", font_size=20).next_to(output_layer, RIGHT, buff=0.3)
+        
+        self.play(Write(ml_title))
+        self.wait()
+        
+        for item in ml_content:
+            self.play(FadeIn(item, shift=RIGHT * 0.3))
+            self.wait(0.5)
+        
+        self.wait()
+        
+        self.play(
+            Create(connections),
+            FadeIn(input_layer),
+            FadeIn(hidden_layer),
+            FadeIn(output_layer),
+            Write(input_label),
+            Write(output_label),
+            run_time=2
+        )
+        self.wait(3)
+        
+        # 结束 - 淡出所有创建的对象
+        self.play(
+            FadeOut(ml_title),
+            FadeOut(ml_content),
+            FadeOut(nn_diagram),
+            FadeOut(input_label),
+            FadeOut(output_label),
+            FadeOut(self.title)
+        )
         self.wait()
