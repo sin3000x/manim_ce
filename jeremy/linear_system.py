@@ -11,6 +11,121 @@ MathTex.set_default(stroke_width=2)
 # 设置全局默认 Matrix h_buff
 Matrix.set_default(h_buff=0.8)
 
+class Opening(Scene):
+    def construct(self):
+        # 左侧：来自各个领域的方程
+        equations = VGroup(
+            # 数据科学：线性回归
+            MathTex(r"\min_{\beta} ||X\beta - y||^2", font_size=36, color=BLUE),
+            # 牛顿迭代
+            MathTex(r"J(x_k)\Delta x = -F(x_k)", font_size=36, color=GREEN),
+            # 微分方程：有限差分
+            MathTex(r"\frac{u_{i+1} - 2u_i + u_{i-1}}{h^2} = f_i", font_size=36, color=RED),
+            # 电路分析：基尔霍夫定律
+            MathTex(r"R_1 i_1 + R_2 i_2 = V", font_size=36, color=PINK),
+            # 网络分析：PageRank
+            MathTex(r"(I - \alpha P^T)x = v", font_size=36, color=TEAL),
+        ).arrange(DOWN, buff=0.8, aligned_edge=LEFT)
+        equations.to_edge(LEFT, buff=2.5)
+        
+        # 领域标签
+        labels = VGroup(
+            Tex("数据科学", font_size=28),
+            Tex("牛顿迭代", font_size=28),
+            Tex("微分方程", font_size=28),
+            Tex("电路分析", font_size=28),
+            Tex("网络分析", font_size=28),
+        )
+        for i, label in enumerate(labels):
+            label.next_to(equations[i], LEFT, buff=0.3).set_color(equations[i].get_color())
+        
+        # 中间：分析/转化的图案（齿轮）
+        gear = VGroup()
+        center_circle = Circle(radius=0.8, color=WHITE, fill_opacity=0.1)
+        
+        # 添加齿轮齿
+        num_teeth = 16
+        for i in range(num_teeth):
+            angle = i * TAU / num_teeth
+            tooth = Rectangle(width=0.3, height=0.15, color=WHITE, fill_opacity=0.3)
+            tooth.move_to(center_circle.point_at_angle(angle) + 0.1 * np.array([np.cos(angle), np.sin(angle), 0]))
+            tooth.rotate(angle)
+            gear.add(tooth)
+        
+        gear.add(center_circle)
+        inner_circle = Circle(radius=0.3, color=WHITE, fill_opacity=0.3)
+        gear.add(inner_circle)
+        
+        transform_icon = gear
+        transform_icon.move_to(ORIGIN).shift(RIGHT * 1.2)
+        
+        # 右侧：统一的 Ax = b 形式
+        unified_form = MathTex(
+            r"A", r"x", r"=", r"b",
+            color=YELLOW,
+            font_size=80
+        )
+        unified_form.to_edge(RIGHT, buff=1)
+        # 强调统一形式
+        highlight_box = SurroundingRectangle(
+            unified_form,
+            color=GOLD,
+            buff=0.3,
+            corner_radius=0.2
+        )
+        
+        # 先显示齿轮
+        self.play(
+            FadeIn(transform_icon, scale=0.5),
+            Write(unified_form),
+            Create(highlight_box),
+        )
+        
+        # 创建持续旋转的动画
+        gear.add_updater(lambda m, dt: m.rotate(dt * 0.5))
+        
+        # 先显示 Ax=b
+        self.wait(0.5)
+        
+        # 使用 LaggedStart 让所有标签和公式依次出现
+        fade_in_anims = []
+        for label, eq in zip(labels, equations):
+            fade_in_anims.append(AnimationGroup(
+                FadeIn(VGroup(label, eq), shift=RIGHT*0.3),
+            ))
+        
+        self.play(
+            LaggedStart(*fade_in_anims, lag_ratio=0.3),
+            run_time=4
+        )
+        self.wait(0.5)
+        
+        # 创建所有方程的分身
+        eq_copies = [eq.copy() for eq in equations]
+        
+        # 使用 LaggedStart 让所有分身依次缩入齿轮
+        shrink_anims = []
+        for eq_copy in eq_copies:
+            shrink_anims.append(
+                eq_copy.animate.scale(0.1).move_to(transform_icon.get_center())
+            )
+        
+        self.play(
+            LaggedStart(*shrink_anims, lag_ratio=0.2),
+            run_time=3
+        )
+        
+        # 移除所有分身
+        for eq_copy in eq_copies:
+            self.remove(eq_copy)
+        
+        # Ax=b 只闪烁一次
+        self.play(
+            Flash(unified_form, color=GOLD, flash_radius=1.5, line_length=0.4),
+            run_time=0.6
+        )
+        
+        self.wait(5)
 
 class LTDemo(LinearTransformationScene):
     def __init__(self, **kwargs):
@@ -2491,7 +2606,7 @@ class Preconditioning(ThreeDScene):
         self.title = Title("Preconditioning")
         
         # 问题描述
-        self.problem = MathTex(r"Ax = b", r"~\Longrightarrow~ ", r"M^{-1}", r"Ax=", r"M^{-1}", "b").next_to(self.title, DOWN, buff=0.5).set_color_by_tex_to_color_map({'M': YELLOW})
+        self.problem = MathTex(r"Ax = b", r"~\Longrightarrow~ ", r"M^{-1}", r"Ax=", r"M^{-1}", "b").next_to(self.title, DOWN, buff=0.25).set_color_by_tex_to_color_map({'M': YELLOW})
         
         
     def construct(self):
