@@ -1784,8 +1784,59 @@ class Arnoldi(Scene):
 
 class GMRES(Scene):
     def construct(self):
+        cm = {'Q': RED, 'H': BLUE}
         title = Title("GMRES (Generalized Minimal Residual Method)")
         self.add(title)
+        self.wait()
+
+        idea = MathTex(r"\min_{x_k\in \mathcal{K}_k} \lVert b-Ax_k\rVert", font_size=60)
+        idea.next_to(title, DOWN, buff=.5)
+
+        inter = MathTex(r"A", r"Q_k", "=", "Q_{k+1}", r"\tilde H_k", r",~", "x_k", "=", "Q_k", "y").set_color_by_tex_to_color_map(cm)
+
+        ls = MathTex(r"\Longrightarrow \lVert r_k\rVert= ", r"\lVert \tilde H_k y -\lVert b\rVert e_1\rVert").set_color_by_tex('H', YELLOW)
+        VGroup(inter, ls).arrange().next_to(idea, DOWN)
+
+        algo = VGroup(
+            Tex(r"\textbf{for} $k=1,2,3,\ldots$"),
+            Tex(r"\textit{Step $k$ of Arnoldi...}", color=GREEN),
+            MathTex(r"\min_y ~\lVert \tilde H_k y -\lVert b\rVert e_1\rVert"),
+            MathTex("x_n=Q_n y")
+        ).arrange(DOWN, aligned_edge=LEFT).scale(.7)
+        algo[1:].shift(RIGHT * .7)
+        algo.to_corner(DL, buff=1)
+        box = SurroundingRectangle(algo, buff=.2)
+        algo_name = Tex("GMRES", color=YELLOW, font_size=35).next_to(box, UP)
+
+        arrow = Arrow(ORIGIN, LEFT, color=GREEN).set_stroke(width=5).next_to(algo[-2], RIGHT, buff=.2)
+        cost = MathTex("O(k^2)", color=GREEN, font_size=35).next_to(arrow)
+
+        convergence = VGroup(
+            Tex("若$A$可对角化：$A=X\Lambda X^{-1}$，那么", font_size=35, color=BLUE),
+            MathTex(r"\lVert r_k\rVert \leq \kappa(X)\min_{p\in\mathcal{P}_k,~p(0)=1}\max_{z\in \Lambda}|p(z)|", color=YELLOW)
+        ).arrange(DOWN, buff=.5).to_corner(DR).align_to(algo_name, UP)
+
+        comment = Tex(r"\kaishu 收敛很快：当$A$的特征值在\\远离原点的地方集中分布", font_size=40, color=BLUE).next_to(convergence, DOWN, buff=.5)
+
+        self.play(Write(idea))
+        self.wait()
+
+        self.play(Write(inter))
+        self.wait()
+        
+        self.play(Write(ls))
+        self.wait()
+
+        self.play(Write(algo))
+        self.play(Create(box), Write(algo_name))
+        self.wait()
+
+        self.play(GrowArrow(arrow), Write(cost))
+        self.wait()
+        self.play(FadeOut(arrow), FadeOut(cost))
+        self.play(Write(convergence))
+        self.wait()
+        self.play(Write(comment))
         self.wait()
 
 class Residual(LinearTransformationScene):
@@ -1877,6 +1928,8 @@ class Residual(LinearTransformationScene):
         )
         
         self.wait()
+
+
 class CG1(ThreeDScene):
     def __init__(self):
         super().__init__()
