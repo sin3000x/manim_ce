@@ -2796,3 +2796,69 @@ class Preconditioning(ThreeDScene):
         
         self.wait()
         
+
+class DontInvert(Scene):
+    def construct(self):
+        wrong = Tex(r"``只要''求出 $A^{-1}$ ``就''能解方程组").to_edge(UP, buff=.5)
+        cross = Cross(wrong)
+
+        font_size = 40
+        drawbacks = VGroup(
+            Tex("1. 计算量大", font_size=font_size),
+            Tex("2. 数值稳定性差", font_size=font_size),
+            Tex("3. 破坏稀疏性", font_size=font_size)
+        ).set_color(YELLOW).arrange(DOWN, aligned_edge=LEFT, buff=.4).next_to(wrong, DOWN, buff=.5)
+
+        self.play(Write(wrong))
+        self.play(Create(cross))
+        self.wait()
+
+        for d in drawbacks:
+            self.play(Write(d))
+            self.wait()
+
+        # self.play(FadeOut(drawbacks))
+        # self.wait()
+
+        # MATLAB 代码示例
+        matlab_label = Tex("MATLAB", font_size=45, color=BLUE).shift(LEFT * 3 + DOWN * .25)
+        matlab_correct = Code(
+            code_string=r"x = A \ b;",
+            language="matlab",
+            background="window",
+        ).scale(0.8).next_to(matlab_label, DOWN, buff=0.5)
+        
+        matlab_wrong = Code(
+            code_string="x = inv(A) * b;",
+            language="matlab",
+            background="window",
+        ).scale(0.8).next_to(matlab_correct, DOWN, buff=0.3)
+        
+        matlab_cross = Cross(matlab_wrong, stroke_color=RED, stroke_width=6)
+
+        # NumPy 代码示例
+        numpy_label = Tex("NumPy", font_size=45, color=ORANGE).move_to(matlab_label).shift(RIGHT * 6)
+        numpy_correct = Code(
+            code_string="x = np.linalg.solve(A, b)",
+            language="python",
+            background="window",
+        ).scale(0.8).next_to(numpy_label, DOWN, buff=0.5)
+        
+        numpy_wrong = Code(
+            code_string="x = np.linalg.inv(A) @ b",
+            language="python",
+            background="window",
+        ).scale(0.8).next_to(numpy_correct, DOWN, buff=0.3)
+        
+        numpy_cross = Cross(numpy_wrong, stroke_color=RED, stroke_width=6)
+
+        self.play(FadeIn(matlab_label), FadeIn(matlab_correct))
+        self.wait()
+        self.play(FadeIn(numpy_label), FadeIn(numpy_correct))
+        self.wait()
+        self.play(
+            FadeIn(matlab_wrong), Create(matlab_cross),
+            FadeIn(numpy_wrong), Create(numpy_cross)
+            )
+        self.wait()
+
