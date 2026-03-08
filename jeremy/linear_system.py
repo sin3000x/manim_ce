@@ -2883,3 +2883,17 @@ class Generalization(Scene):
             )
         )
         self.wait()
+
+
+class Thumbnail(Scene):
+    def construct(self):
+        font_size = 160
+        stroke_width = 9
+        v = VGroup(
+            MathTex(r"\text{求}~ {{A^{-1}}} {{b}}", font_size=font_size, stroke_width=stroke_width),
+            MathTex(r"\text{而非}~ {{A^{-1}}}{{\times}} {{b}}", font_size=font_size, stroke_width=stroke_width)
+        ).arrange(DOWN, buff=.8)
+        for t in v:
+            t.set_color_by_tex_to_color_map({'A': YELLOW, 'b': BLUE, 'times': RED})
+        # v[1][0][:2].set_color(RED)
+        self.add(v)
