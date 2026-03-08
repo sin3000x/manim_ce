@@ -5,9 +5,10 @@ from manim.scene.vector_space_scene import X_COLOR, Y_COLOR
 # 让本文件内所有 Tex/MathTex 默认使用 ctex，无需逐个传 tex_template
 config.tex_template = TexTemplateLibrary.ctex
 
-# 设置全局默认 stroke_width
-Tex.set_default(stroke_width=2)
-MathTex.set_default(stroke_width=2)
+# 设置全局默认 stroke_width 和 tex_template
+Tex.set_default(stroke_width=2, tex_template=TexTemplateLibrary.ctex)
+MathTex.set_default(stroke_width=2, tex_template=TexTemplateLibrary.ctex)
+Title.set_default(tex_template=TexTemplateLibrary.ctex)
 
 # 设置全局默认 Matrix h_buff
 Matrix.set_default(h_buff=0.8)
@@ -1638,7 +1639,7 @@ class BigDefinition(Scene):
     
     def construct(self):
         # 标题
-        self.title = Title("什么算``大''矩阵？", font_size=48,)
+        self.title = Title("什么算``大''矩阵？", font_size=48)
         self.add(self.title)
         self.wait()
         
