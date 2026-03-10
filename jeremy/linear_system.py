@@ -1,3 +1,6 @@
+"""
+manim: v0.19.2
+"""
 from manim import *
 from pathlib import Path
 from manim.scene.vector_space_scene import X_COLOR, Y_COLOR
