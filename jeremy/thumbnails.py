@@ -288,3 +288,75 @@ class Cantor(Scene):
         self.add(delta_line1, delta_line2, delta_label)
         self.add(epsilon_line1, epsilon_line2, epsilon_label)
         self.add(title)#, subtitle)
+
+
+class UniformContinuity(Scene):
+    def construct(self):
+        # 绘制一致连续函数
+        axes = Axes(
+            x_range=[0, 6, 1],
+            y_range=[0, 4, 1],
+            x_length=9,
+            y_length=4.5,
+            axis_config={"include_tip": False, "stroke_width": 3, "color": GREY},
+        ).shift(DOWN * 0.4)
+        
+        # 平滑的一致连续函数
+        def f(x):
+            return 2 + 0.6 * np.sin(1.5 * x) + 0.3 * np.cos(2.5 * x)
+        
+        curve = axes.plot(f, x_range=[0.5, 5.5], color=BLUE, stroke_width=6)
+        
+        # 展示一致连续性：对于统一的ε，在不同位置的两对点，x距离可能不同但函数值变化都是ε
+        # 第一对点 - 左边（函数下降，但epsilon绝对值相同）
+        x1_a = 2.000
+        x1_b = 2.836
+        y1_a = f(x1_a)
+        y1_b = f(x1_b)
+        
+        point1_a = Dot(axes.c2p(x1_a, y1_a), color=YELLOW, radius=0.12)
+        point1_b = Dot(axes.c2p(x1_b, y1_b), color=YELLOW, radius=0.12)
+        
+        # 第二对点 - 右边（函数上升）
+        x2_a = 4.500
+        x2_b = 4.961
+        y2_a = f(x2_a)
+        y2_b = f(x2_b)
+        
+        point2_a = Dot(axes.c2p(x2_a, y2_a), color=YELLOW, radius=0.12)
+        point2_b = Dot(axes.c2p(x2_b, y2_b), color=YELLOW, radius=0.12)
+        
+        # δ 标记（x轴方向的距离）- 使用虚线，不同的δ
+        delta_line1_a = DashedLine(axes.c2p(x1_a, 0), axes.c2p(x1_a, y1_a), color=YELLOW, stroke_width=4)
+        delta_line1_b = DashedLine(axes.c2p(x1_b, 0), axes.c2p(x1_b, y1_b), color=YELLOW, stroke_width=4)
+        delta_label1 = MathTex(r"\delta_1(", r"\varepsilon", r")", font_size=60).move_to(axes.c2p((x1_a+x1_b)/2, -0.5))
+        delta_label1[0].set_color(YELLOW)
+        delta_label1[1].set_color(GREEN)
+        delta_label1[2].set_color(YELLOW)
+        
+        delta_line2_a = DashedLine(axes.c2p(x2_a, 0), axes.c2p(x2_a, y2_a), color=YELLOW, stroke_width=4)
+        delta_line2_b = DashedLine(axes.c2p(x2_b, 0), axes.c2p(x2_b, y2_b), color=YELLOW, stroke_width=4)
+        delta_label2 = MathTex(r"\delta_2(", r"\varepsilon", r")", font_size=60).move_to(axes.c2p((x2_a+x2_b)/2, -0.5))
+        delta_label2[0].set_color(YELLOW)
+        delta_label2[1].set_color(GREEN)
+        delta_label2[2].set_color(YELLOW)
+        
+        # ε 标记（y轴方向的距离）- 使用虚线，统一的ε
+        epsilon_line1_a = DashedLine(axes.c2p(0, y1_a), axes.c2p(x1_a, y1_a), color=GREEN, stroke_width=4)
+        epsilon_line1_b = DashedLine(axes.c2p(0, y1_b), axes.c2p(x1_b, y1_b), color=GREEN, stroke_width=4)
+        epsilon_label1 = MathTex(r"\varepsilon", font_size=60, color=GREEN).move_to(axes.c2p(-0.5, (y1_a+y1_b)/2))
+        
+        epsilon_line2_a = DashedLine(axes.c2p(6, y2_a), axes.c2p(x2_a, y2_a), color=GREEN, stroke_width=4)
+        epsilon_line2_b = DashedLine(axes.c2p(6, y2_b), axes.c2p(x2_b, y2_b), color=GREEN, stroke_width=4)
+        epsilon_label2 = MathTex(r"\varepsilon", font_size=60, color=GREEN).move_to(axes.c2p(6.5, (y2_a+y2_b)/2))
+        
+        # 主标题
+        title = Tex("\\textbf{一致连续}", font_size=220, color=WHITE).to_edge(UP, buff=0.6)
+        
+        self.add(axes, curve)
+        self.add(point1_a, point1_b, point2_a, point2_b)
+        self.add(delta_line1_a, delta_line1_b, delta_label1)
+        self.add(delta_line2_a, delta_line2_b, delta_label2)
+        self.add(epsilon_line1_a, epsilon_line1_b, epsilon_label1)
+        self.add(epsilon_line2_a, epsilon_line2_b, epsilon_label2)
+        self.add(title)
