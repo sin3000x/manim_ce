@@ -163,3 +163,70 @@ class Heine(Scene):
         # self.add(limit_glow, limit_point)
         self.add(sequence_points)
         self.add(title, subtitle)
+
+
+class Darboux(Scene):
+    def construct(self):
+        import matplotlib.pyplot as plt
+        from PIL import Image
+        import io
+        
+        # 创建 matplotlib 图形 - 透明背景
+        fig, ax = plt.subplots(figsize=(12, 7), facecolor='none')
+        ax.set_facecolor('none')
+        
+        # 绘制导函数 f'(x) = 2x*sin(1/x) - cos(1/x)
+        x_left = np.linspace(-3, -0.05, 1000)
+        x_right = np.linspace(0.05, 3, 1000)
+        
+        def f_prime(x):
+            return 2 * x * np.sin(1/x) - np.cos(1/x)
+        
+        y_left = f_prime(x_left)
+        y_right = f_prime(x_right)
+        
+        ax.plot(x_left, y_left, color='#00BFFF', linewidth=3)
+        ax.plot(x_right, y_right, color='#00BFFF', linewidth=3)
+        
+        # 在 x=0 处绘制高频震荡
+        x_osc = np.linspace(-0.05, 0.05, 5000)
+        y_osc = f_prime(x_osc)
+        ax.plot(x_osc, y_osc, color='#00BFFF', linewidth=2)
+        
+        # 坐标轴设置 - 去掉网格、标签，保留坐标轴
+        ax.set_xlim(-3, 3)
+        ax.set_ylim(-2, 2)
+        ax.grid(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        # ax.spines['left'].set_position('zero')  # y轴在x=0处
+        ax.spines['bottom'].set_position('zero')  # x轴在y=0处
+        ax.spines['left'].set_color('white')
+        ax.spines['bottom'].set_color('white')
+        ax.spines['left'].set_linewidth(2)
+        ax.spines['bottom'].set_linewidth(2)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        
+        # 保存为图像 - 透明背景
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='none', transparent=True)
+        buf.seek(0)
+        plt.close()
+        
+        # 转换为 manim 图像
+        img = Image.open(buf)
+        img_array = np.array(img)
+        
+        # 创建 manim 图像对象
+        manim_img = ImageMobject(img_array).to_edge(DOWN, buff=-0.2)
+        
+        # 主标题
+        title = Tex("\\textbf{达布定理}", font_size=180, color=WHITE).to_edge(UP, buff=0.6)
+        
+        # 核心内容
+        content = VGroup(
+            Tex("导函数具有介值性", font_size=50, color=YELLOW),
+        ).arrange(DOWN, buff=0.2).next_to(title, DOWN, buff=0.5)
+        
+        self.add(title, content, manim_img.shift(DOWN * 0.8))
