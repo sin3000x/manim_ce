@@ -230,3 +230,61 @@ class Darboux(Scene):
         ).arrange(DOWN, buff=0.2).next_to(title, DOWN, buff=0.5)
         
         self.add(title, content, manim_img.shift(DOWN * 0.8))
+
+
+class Cantor(Scene):
+    def construct(self):
+        # 绘制闭区间上的连续函数
+        axes = Axes(
+            x_range=[0, 5, 1],
+            y_range=[1, 4, 1],
+            x_length=8,
+            y_length=4,
+            axis_config={"include_tip": False, "stroke_width": 3, "color": GREY},
+        ).shift(DOWN * 0.5)
+        
+        # 平滑连续函数
+        def f(x):
+            return 2 + 0.8 * np.sin(2 * x) + 0.4 * np.cos(3 * x)
+        
+        curve = axes.plot(f, x_range=[0.5, 4.5], color=BLUE, stroke_width=6)
+        
+        # 端点标记
+        a_point = Dot(axes.c2p(0.5, f(0.5)), color=RED, radius=0.15)
+        b_point = Dot(axes.c2p(4.5, f(4.5)), color=RED, radius=0.15)
+        
+        a_label = MathTex("a", font_size=70, color=RED).next_to(a_point, DOWN, buff=0.3)
+        b_label = MathTex("b", font_size=70, color=RED).next_to(b_point, DOWN, buff=0.3)
+        
+        # 展示一致连续性：任意两点距离小于δ时，函数值距离小于ε
+        x1, x2 = 2.0, 2.6
+        y1, y2 = f(x1), f(x2)
+        
+        point1 = Dot(axes.c2p(x1, y1), color=YELLOW, radius=0.12)
+        point2 = Dot(axes.c2p(x2, y2), color=YELLOW, radius=0.12)
+        
+        # δ 和 ε 的虚线标记
+        delta_line1 = DashedLine(axes.c2p(x1, 1), axes.c2p(x1, y1), color=YELLOW, stroke_width=4)
+        delta_line2 = DashedLine(axes.c2p(x2, 1), axes.c2p(x2, y2), color=YELLOW, stroke_width=4)
+        delta_label = MathTex(r"\delta", font_size=60, color=YELLOW).move_to(axes.c2p((x1+x2)/2, 0.5))
+        
+        epsilon_line1 = DashedLine(axes.c2p(0, y1), axes.c2p(x1, y1), color=GREEN, stroke_width=4)
+        epsilon_line2 = DashedLine(axes.c2p(0, y2), axes.c2p(x2, y2), color=GREEN, stroke_width=4)
+        epsilon_label = MathTex(r"\varepsilon", font_size=60, color=GREEN).move_to(axes.c2p(-0.3, (y1+y2)/2))
+        
+        # 主标题
+        title = Tex("\\textbf{康托定理}", font_size=220, color=WHITE).to_edge(UP, buff=0.8)
+        
+        # 核心内容
+        subtitle = Tex(
+            "闭区间上连续函数必一致连续",
+            font_size=55,
+            color=YELLOW
+        ).next_to(title, DOWN, buff=0.4)
+        
+        self.add(axes, curve)
+        self.add(a_point, b_point, a_label, b_label)
+        self.add(point1, point2)
+        self.add(delta_line1, delta_line2, delta_label)
+        self.add(epsilon_line1, epsilon_line2, epsilon_label)
+        self.add(title)#, subtitle)
